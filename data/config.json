@@ -1,0 +1,28 @@
+{
+  "network": {
+    "wifi": {
+      "ssid": "MY_SSID",
+      "password": "MY_PASSWORD"
+    }
+  },
+  "mqtt": {
+    "server": {
+      "host": "192.168.1.1",
+      "port": 1883
+    },
+    "publish": {
+      "retain": true
+    }
+  },
+  "ac": {
+    "protocol": "airwell",
+    "ir_rx": {
+      "gpio": 9
+    },
+    "ir_tx" : {
+      "gpio": 4,
+      "inverted": true
+    },
+    "is_on_gpio": 8
+  }
+}

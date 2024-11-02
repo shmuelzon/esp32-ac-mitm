@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        esp-variant:
+          - esp32
+          - esp32-s3
+          - esp32-c3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: ESP-IDF Build
+        uses: espressif/esp-idf-ci-action@v1.1.0
+        with:
+          esp_idf_version: v5.2.2
+          command: |
+            idf.py set-target ${{ matrix.esp-variant }}
+            idf.py image
+
+      - name: Upload Application Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Application (${{ matrix.esp-variant }})
+          path: build/ac-mitm.bin
+
+      - name: Upload Filesystem Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: File System (${{ matrix.esp-variant }})
+          path: build/fs_0.bin
+
+      - name: Upload Full Flash Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Full Flash Image (${{ matrix.esp-variant }})
+          path: build/ac-mitm-full.bin
+
+      - name: Upload Release
+        if: github.event_name == 'release' && github.event.action == 'created'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo cp build/ac-mitm-full.bin ac-mitm-full.${{ matrix.esp-variant }}.bin
+          sudo cp build/ac-mitm.bin ac-mitm.${{ matrix.esp-variant }}.bin
+          gh release upload ${GITHUB_REF#refs/tags/} ac-mitm-full.${{ matrix.esp-variant }}.bin
+          gh release upload ${GITHUB_REF#refs/tags/} ac-mitm.${{ matrix.esp-variant }}.bin
